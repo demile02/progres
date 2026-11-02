@@ -291,6 +291,12 @@
     return 0;
   }
   function fmt(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
+  var LABEL_BY_KEY = {};
+  LABELS.forEach(function(pair){ LABEL_BY_KEY[pair[0]] = pair[1]; });
+  function stageName(key, s){
+    if(s && s.label) return s.label;
+    return LABEL_BY_KEY[key] || key;
+  }
   function fmtDur(sec){
     sec = Math.max(0, Math.round(sec));
     var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
@@ -349,11 +355,11 @@
       if(!inner) inner = '<div class="empty-line">Belum ada pekerjaan yang selesai di tahap ini.</div>';
       expand = '<div id="exp-' + key + '">' + inner + "</div>";
     }
-    return '<li class="stage fam-' + (FAM[key] || "sage") + (isCurrent && !done ? " current" : "") + '" data-key="' + key + '">' +
+    return '<li class="stage fam-' + (FAM[key] || "lav") + (isCurrent && !done ? " current" : "") + '" data-key="' + key + '">' +
       '<button type="button" class="stage-head" data-toggle="' + key + '" aria-expanded="' +
       (expanded ? "true" : "false") + '" aria-controls="exp-' + key + '">' +
       '<span class="row"><span class="left"><span class="mark' + markCls + '">' + markTxt +
-      '</span><span class="name">' + label + "</span></span>" +
+      '</span><span class="name">' + esc(label) + "</span></span>" +
       '<span class="val">' + right + "</span></span>" +
       '<span class="chev' + (expanded ? " open" : "") + '" aria-hidden="true">▾</span></button>' +
       meta + expand +
@@ -370,21 +376,24 @@
     if(prog.updated_at){ var t = Date.parse(prog.updated_at); if(!isNaN(t)) lastTs = t; }
     lastLabel = prog.updated_label || "";
     var stages = prog.stages || {};
+    var keys = Object.keys(stages);
+    if(!keys.length) keys = LABELS.map(function(pair){ return pair[0]; });
     var total = 0;
-    var percents = LABELS.map(function(pair){ var p = pctOf(stages[pair[0]]); total += p; return p; });
+    var percents = keys.map(function(k){ var p = pctOf(stages[k]); total += p; return p; });
     var currentIdx = -1;
-    for(var i = 0; i < percents.length; i++){ if(percents[i] < 100){ currentIdx = i; break; } }
-    var curKey = currentIdx >= 0 ? LABELS[currentIdx][0] : null;
+    for(var i = 0; i < keys.length; i++){ if(stages[keys[i]] && stages[keys[i]].status === "running"){ currentIdx = i; break; } }
+    if(currentIdx < 0) for(var i = 0; i < percents.length; i++){ if(percents[i] < 100){ currentIdx = i; break; } }
+    var curKey = currentIdx >= 0 ? keys[currentIdx] : null;
     if(curKey !== lastCurrentKey){
       if(curKey) expandedKey = curKey;
       lastCurrentKey = curKey;
     }
-    var overall = Math.round(total / LABELS.length);
+    var overall = keys.length ? Math.round(total / keys.length) : 0;
     document.getElementById("overall").textContent = overall;
     var bar = document.getElementById("overallBar");
     bar.style.width = overall + "%";
     document.getElementById("activeStage").textContent =
-      currentIdx >= 0 ? LABELS[currentIdx][1] : (prog.finished_at ? "Selesai" : "Checklist selesai, produksi berlanjut");
+      currentIdx >= 0 ? stageName(curKey, stages[curKey]) : (prog.finished_at ? "Selesai" : "Checklist selesai, produksi berlanjut");
     if(prog.title && prog.started_at){
       try{
         var epKey = prog.title + "|" + prog.started_at;
@@ -435,7 +444,7 @@
     }
     if(prog.stages){
       var html = '<ul class="stages">';
-      LABELS.forEach(function(pair, i){ html += stageHtml(pair[0], pair[1], stages[pair[0]], i === currentIdx); });
+      keys.forEach(function(k, i){ html += stageHtml(k, stageName(k, stages[k]), stages[k], i === currentIdx); });
       html += "</ul>";
       document.getElementById("stages").innerHTML = html;
     }
@@ -604,7 +613,7 @@
     if(s.detail) inner += '<div class="detail">' + esc(noDash(s.detail)) + "</div>";
     return '<div class="hstage"><div class="row"><span class="left">' +
       '<span class="mark' + (done ? " ok" : "") + '">' + (done ? "✓" : "") + '</span>' +
-      '<span class="name">' + esc(STAGE_LABEL[s.key] || s.key) + '</span></span>' +
+      '<span class="name">' + esc(s.label || STAGE_LABEL[s.key] || s.key) + '</span></span>' +
       '<span class="val">' + right + "</span></div>" + meta + inner +
       '<div class="bar"><div class="fill" style="width:' + p + '%"></div></div></div>';
   }
