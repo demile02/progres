@@ -463,11 +463,22 @@
     document.getElementById("err").style.display = "none";
   }
 
+  var PROG_PC = "https://progres.demile.my.id/progress.json?t=";
+  var PROG_SUPA = "https://czvshkgrfyrhmiwydtwt.supabase.co/storage/v1/object/public/progres/progress.json?t=";
+  function fetchProg(url, timeoutMs){
+    var ctl = ("AbortController" in window) ? new AbortController() : null;
+    var timer = ctl ? setTimeout(function(){ ctl.abort(); }, timeoutMs) : null;
+    return fetch(url + Date.now(), {cache: "no-store", signal: ctl ? ctl.signal : undefined})
+      .then(function(r){ if(timer) clearTimeout(timer); if(!r.ok) throw new Error(r.status); return r.json(); });
+  }
   function load(){
-    fetch("https://czvshkgrfyrhmiwydtwt.supabase.co/storage/v1/object/public/progres/progress.json?t=" + Date.now(), {cache: "no-store"})
-      .then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
-      .then(function(d){ prog = d; renderAll(); })
-      .catch(function(){ document.getElementById("err").style.display = "block"; });
+    fetchProg(PROG_PC, 4000)
+      .then(function(d){ if(window.console) console.info("[progres] sumber data: PC Demile"); prog = d; renderAll(); })
+      .catch(function(){
+        fetchProg(PROG_SUPA, 8000)
+          .then(function(d){ if(window.console) console.info("[progres] sumber data: fallback Supabase"); prog = d; renderAll(); })
+          .catch(function(){ document.getElementById("err").style.display = "block"; });
+      });
   }
   load();
   setInterval(load, 3000);
