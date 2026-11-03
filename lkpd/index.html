@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LKPD Bab VI — Struktur Al-Qur'an · Kelas X MAN Kota Blitar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Reenie+Beanie&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#1f3a5f; --ink:#1c2430; --muted:#5a6572; --line:#d8dde3;
+    --paper:#ffffff; --bg:#f2f0eb; --soft:#eef2f7; --ok:#256d46; --warn:#8c5a12;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    font-family:-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    background:var(--bg); color:var(--ink); line-height:1.5;
+    padding:16px 12px 120px;
+  }
+  .wrap{max-width:720px; margin:0 auto;}
+  header.top{
+    background:var(--navy); color:#fff; border-radius:10px;
+    padding:20px 18px 16px; margin-bottom:14px;
+  }
+  header.top h1{font-size:20px; line-height:1.3; letter-spacing:.2px;}
+  header.top p{font-size:13.5px; opacity:.92; margin-top:4px;}
+  .card{
+    background:var(--paper); border:1px solid var(--line); border-radius:10px;
+    padding:16px; margin-bottom:14px;
+  }
+  .card h2{
+    font-size:16px; color:var(--navy); margin-bottom:4px;
+    display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;
+  }
+  .card h2 .time{
+    font-size:12px; font-weight:600; color:var(--warn);
+    background:#faf1de; border:1px solid #ecd9ae; padding:1px 8px; border-radius:20px;
+  }
+  .card .desc{font-size:14px; color:var(--muted); margin-bottom:12px;}
+  label{display:block; font-size:13px; font-weight:600; margin:12px 0 5px; color:var(--ink);}
+  label:first-of-type{margin-top:0;}
+  input[type=text], textarea, select{
+    width:100%; min-height:48px; padding:11px 12px; font-size:16px;
+    border:1.5px solid var(--line); border-radius:8px; background:#fff; color:var(--ink);
+    font-family:inherit;
+  }
+  textarea{min-height:76px; resize:vertical;}
+  input:focus, textarea:focus, select:focus{outline:2px solid var(--navy); outline-offset:1px; border-color:var(--navy);}
+  .rowline{
+    border:1px solid var(--line); border-radius:8px; padding:12px; margin-bottom:10px;
+    background:#fbfcfd;
+  }
+  .rowline .unsur{font-weight:700; font-size:14.5px; margin-bottom:8px; color:var(--navy);}
+  .rowline .grid{display:grid; grid-template-columns:1fr; gap:8px;}
+  @media (min-width:560px){ .rowline .grid{grid-template-columns:1fr 1fr;} }
+  .hint{font-size:12.5px; color:var(--muted); margin-top:6px;}
+  .adab{
+    background:var(--soft); border-left:4px solid var(--navy);
+    padding:10px 12px; border-radius:0 8px 8px 0; font-size:13.5px; margin-top:12px;
+  }
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 4px;}
+  .chip{
+    min-height:48px; padding:10px 16px; font-size:15px; font-weight:700;
+    border:2px solid var(--navy); color:var(--navy); background:#fff; border-radius:8px;
+    cursor:pointer; font-family:inherit;
+  }
+  .chip.picked{background:var(--navy); color:#fff;}
+  .chip:disabled{opacity:.38; cursor:default;}
+  .seq{
+    min-height:52px; border:1.5px dashed var(--line); border-radius:8px;
+    padding:10px 12px; font-size:15px; display:flex; align-items:center; flex-wrap:wrap; gap:6px;
+    background:#fbfcfd;
+  }
+  .seq .item{background:var(--soft); border:1px solid var(--line); border-radius:6px; padding:3px 10px; font-weight:700;}
+  .seq .arrow{color:var(--muted); font-weight:700;}
+  .seq .empty{color:var(--muted); font-size:13.5px;}
+  .btnrow{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;}
+  button.act{
+    min-height:48px; padding:10px 18px; font-size:15px; font-weight:700; border-radius:8px;
+    border:2px solid var(--navy); background:#fff; color:var(--navy); cursor:pointer; font-family:inherit;
+  }
+  button.act.primary{background:var(--navy); color:#fff;}
+  .prof{border:1px solid var(--line); border-radius:8px; padding:12px; margin-bottom:10px; background:#fbfcfd;}
+  .prof .ptitle{font-weight:700; color:var(--navy); margin-bottom:6px; font-size:14.5px;}
+  .prof .grid{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+  .prof .grid .full{grid-column:1 / -1;}
+  .prof label{margin-top:6px; font-size:12.5px;}
+  .prof input, .prof select{min-height:46px;}
+  .bar{
+    position:fixed; left:0; right:0; bottom:0; z-index:20;
+    background:#fff; border-top:1px solid var(--line);
+    padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+  }
+  .bar .in{max-width:720px; margin:0 auto; display:flex; gap:8px; align-items:center;}
+  .bar .prog{flex:1; font-size:13px; color:var(--muted); line-height:1.35;}
+  .bar .prog b{color:var(--ok); font-size:14px;}
+  .bar button{
+    min-height:52px; padding:10px 16px; font-size:15px; font-weight:700; border-radius:8px;
+    border:2px solid var(--navy); cursor:pointer; font-family:inherit; white-space:nowrap;
+  }
+  #btnCopy{background:var(--navy); color:#fff;}
+  #btnDl{background:#fff; color:var(--navy);}
+  #toast{
+    position:fixed; left:50%; bottom:96px; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:#fff; padding:12px 18px; border-radius:8px; font-size:14.5px;
+    opacity:0; pointer-events:none; transition:opacity .25s, transform .25s; z-index:30; max-width:88vw; text-align:center;
+  }
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  .saved{font-size:12px; color:var(--ok); margin-top:6px; min-height:15px;}
+</style>
+<style id="softly">
+  :root{
+    --navy:#6F66A3; --ink:#292524; --muted:#78716C;
+    --line:#F1EDE6; --bg:#FDFCF8; --soft:#EFEDF4;
+    --ok:#6F66A3; --warn:#6F66A3;
+    --lav:#EFEDF4; --lav-soft:#E6E6FA; --hair:#F1EDE6; --clav:#6F66A3;
+    --shadow:0 4px 20px -2px rgba(0,0,0,0.05);
+    --bord:rgba(41,37,36,0.16);
+  }
+  body{font-family:"Outfit",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; background:var(--bg); color:var(--ink);}
+  body::before, body::after{content:""; position:fixed; border-radius:50%; filter:blur(60px); opacity:.6; z-index:0; pointer-events:none; background:var(--lav-soft);}
+  body::before{width:340px; height:340px; top:-110px; right:-90px;}
+  body::after{width:300px; height:300px; bottom:-100px; left:-100px;}
+  .wrap{position:relative; z-index:1;}
+  .wm{font-family:"Reenie Beanie",cursive; font-size:29px; line-height:1; color:var(--ink);}
+  header.top{
+    background:linear-gradient(180deg,#F4F1FA 0%, #EFEDF4 100%);
+    border:1px solid var(--hair); border-radius:32px; box-shadow:var(--shadow); color:var(--ink);
+    padding:24px 22px 20px;
+  }
+  header.top h1{font-family:"Outfit",sans-serif; font-weight:600; font-size:25px; line-height:1.25; letter-spacing:-0.02em; margin-top:8px;}
+  header.top p{color:#6E675F; opacity:1; font-size:14px;}
+  .card{background:#fff; -webkit-backdrop-filter:none; backdrop-filter:none; border:1px solid var(--hair); border-radius:24px; box-shadow:var(--shadow); padding:20px;}
+  .card h2{color:var(--ink); font-size:20px; font-weight:600; letter-spacing:-0.012em;}
+  .card h2 .time{background:var(--lav); color:#6E675F; border:1px solid var(--hair); border-radius:999px; font-size:11.5px; font-weight:600;}
+  input[type=text], textarea, select{
+    border:1px solid var(--bord); border-radius:14px; background:var(--bg);
+    font-family:"Outfit",sans-serif; color:var(--ink);
+  }
+  input:focus, textarea:focus, select:focus{outline:none; border-color:var(--clav); box-shadow:0 0 0 3px rgba(111,102,163,0.15);}
+  .rowline, .prof{background:var(--bg); border:1px solid var(--hair); border-radius:18px;}
+  .adab{background:var(--lav); border-left:4px solid var(--clav); border-radius:0 18px 18px 0;}
+  .chip{border:1.5px solid var(--bord); color:var(--ink); background:#fff; border-radius:999px; font-weight:600;}
+  .chip.picked{background:var(--lav); border-color:var(--clav); color:var(--ink);}
+  .seq{background:#fff; border:1.5px dashed var(--bord); border-radius:18px;}
+  .seq .item{background:var(--lav); border:1px solid var(--hair); border-radius:12px;}
+  button.act{border:1.5px solid var(--bord); background:#fff; color:var(--ink); border-radius:999px; font-weight:500;}
+  .bar{background:rgba(253,252,248,0.92); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); border-top:1px solid var(--hair);}
+  .bar button{border-radius:999px;}
+  #btnKirim{background:var(--clav); border-color:var(--clav); color:#fff; font-weight:600;}
+  #btnCopy{background:#fff; border:1px solid var(--bord); color:var(--ink); font-weight:500;}
+  #btnDl{background:transparent; border:1.5px solid var(--bord); color:var(--ink); font-weight:500;}
+  #btnKirim:disabled{opacity:.45;}
+  .bar .prog b{color:var(--clav);}
+  #toast{background:#292524; border-radius:20px;}
+  .saved{color:var(--clav);}
+  .picker{position:relative;}
+  .results{
+    position:absolute; left:0; right:0; top:calc(100% + 6px); z-index:25;
+    background:#fff; border:1px solid var(--hair); border-radius:18px; box-shadow:var(--shadow);
+    max-height:264px; overflow:auto; padding:6px;
+  }
+  .results button{
+    display:flex; justify-content:space-between; align-items:baseline; gap:10px;
+    width:100%; text-align:left; padding:11px 12px; background:none; border:0;
+    border-bottom:1px solid var(--hair); font:inherit; font-size:15px; font-weight:600; color:var(--ink); cursor:pointer;
+  }
+  .results button:last-child{border-bottom:0;}
+  .results button small{color:var(--muted); font-weight:500; font-size:12.5px; white-space:nowrap;}
+  .results .none{padding:11px 12px; font-size:13.5px; color:var(--muted);}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  input[readonly]{background:var(--lav); color:var(--ink); font-weight:600;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="wm">tugas 6 · kelas 10</div>
+    <h1>LKPD Bab VI — Struktur Al-Qur'an</h1>
+    <p>Al-Qur'an Hadis · Kelas X Fase E · MAN Kota Blitar<br>
+    Bab VI: Al-Qur'an Kebenaran Berlaku Sepanjang Zaman</p>
+  </header>
+
+  <section class="card" id="identitas">
+    <h2>Identitas</h2>
+    <p class="desc">Isi dulu sebelum mulai. Kerjakan sendiri-sendiri, berurutan dari Bagian A sampai D.</p>
+    <label for="fNama">Nama lengkap</label>
+    <div class="picker">
+      <input type="text" id="fNama" data-save placeholder="Ketik namamu, lalu ketuk dari daftar" autocomplete="off">
+      <div class="results" id="namaResults" hidden></div>
+    </div>
+    <p class="hint">Ketik beberapa huruf namamu, lalu ketuk namamu yang muncul di daftar. Kelas dan nomor absenmu terisi otomatis.</p>
+    <div class="grid2">
+      <div>
+        <label for="fKelas">Kelas (otomatis)</label>
+        <input type="text" id="fKelas" data-save readonly placeholder="—">
+      </div>
+      <div>
+        <label for="fAbsen">Nomor absen (otomatis)</label>
+        <input type="text" id="fAbsen" data-save readonly placeholder="—">
+      </div>
+    </div>
+    <label for="fKode">Kode kelas (disebutkan guru di kelas)</label>
+    <input type="text" id="fKode" data-save inputmode="numeric" maxlength="6" placeholder="6 digit, dari gurumu">
+    <div class="adab"><b>Batas kirim: Kamis, 5 November 2026, pukul 19.00 WIB.</b> Sesudah jam itu tombol Kirim terkunci dan jawaban tidak lagi diterima sistem.</div>
+    <div class="adab">Perlakukan mushaf dengan hormat: tangan bersih, mushaf diletakkan di tempat yang layak, dan periksa dulu sebelum menulis. Cantumkan sumber setiap temuanmu.</div>
+    <div class="saved" id="saveNote"></div>
+  </section>
+
+  <section class="card" id="bagianA">
+    <h2>Bagian A — Berburu Penanda Struktur <span class="time">±15 menit</span></h2>
+    <p class="desc">Buka halaman mushaf yang ditentukan guru, amati baik-baik, lalu isi dari yang benar-benar kamu temukan di halaman itu.</p>
+    <label for="aHalaman">Halaman mushaf yang diamati</label>
+    <input type="text" id="aHalaman" data-save inputmode="numeric" placeholder="Nomor halaman">
+    <div id="aRows"></div>
+    <label style="margin-top:14px;">Tanda waqaf yang kamu temukan (minimal 5)</label>
+    <div id="aWaqaf"></div>
+  </section>
+
+  <section class="card" id="bagianB">
+    <h2>Bagian B — Hierarki dan Klasifikasi <span class="time">±20 menit</span></h2>
+    <p class="desc">B1. Ketuk kotak-kotak ini berurutan untuk menyusun bagan hierarki struktur Al-Qur'an, dari satuan isi yang terbesar sampai pembagian bacanya. Ketuk "Ulangi" kalau mau menyusun ulang.</p>
+    <div class="chips" id="bChips"></div>
+    <div class="seq" id="bSeq"><span class="empty">Urutanmu akan muncul di sini.</span></div>
+    <div class="btnrow"><button type="button" class="act" id="bReset">Ulangi Susunan</button></div>
+    <label for="bJelas">Jelaskan hubungan antarunsur pada baganmu</label>
+    <textarea id="bJelas" data-save placeholder="Contoh: Surah tersusun atas ayat. Juz, hizb, dan ruku' adalah pembagian untuk memudahkan membaca, sehingga bisa melintasi batas surah…"></textarea>
+    <label for="bQ1">B2. Mengapa satu juz dapat memuat bagian dari lebih dari satu surah? Berikan satu contoh dari mushaf.</label>
+    <textarea id="bQ1" data-save></textarea>
+    <label for="bQ2">Apa perbedaan mendasar antara unsur isi (surah, ayat) dan pembagian baca (juz, hizb, ruku')?</label>
+    <textarea id="bQ2" data-save></textarea>
+    <label style="margin-top:14px;">B3. Klasifikasikan tiga surah berikut dari ciri-cirinya</label>
+    <div id="bKlas"></div>
+  </section>
+
+  <section class="card" id="bagianC">
+    <h2>Bagian C — Profil Tiga Surah <span class="time">±15 menit</span></h2>
+    <p class="desc">Analisislah tiga surah yang ditentukan guru memakai mushaf atau sumber digital tepercaya. Hasil tabel ini yang akan kamu sajikan di galeri kelas.</p>
+    <div id="cProf"></div>
+  </section>
+
+  <section class="card" id="bagianD">
+    <h2>Bagian D — Tiket Keluar <span class="time">±10 menit</span></h2>
+    <p class="desc">Kerjakan sendiri, jujur dari pemahamanmu hari ini.</p>
+    <label for="dPaham">Dua hal yang sudah saya pahami tentang struktur Al-Qur'an</label>
+    <textarea id="dPaham" data-save></textarea>
+    <label for="dPeriksa">Satu unsur yang masih perlu saya periksa kembali</label>
+    <textarea id="dPeriksa" data-save></textarea>
+    <label for="dTindak">Satu tindakan bertanggung jawab saya ketika memakai mushaf atau aplikasi Al-Qur'an</label>
+    <textarea id="dTindak" data-save></textarea>
+  </section>
+
+  <p style="font-size:12.5px; color:var(--muted); text-align:center;">Sesudah selesai, ketuk <b>Kirim Jawaban</b>. Jawabanmu langsung tercatat di tabel guru. Tombol Salin dan Unduh adalah cadangan kalau jaringan bermasalah. Jawabanmu juga tersimpan otomatis di HP ini selama kamu memakai peramban yang sama.</p>
+</div>
+
+<div class="bar">
+  <div class="in">
+    <div class="prog" id="progText">Terisi <b>0%</b><br>dari seluruh isian</div>
+    <button type="button" id="btnDl">Unduh</button>
+    <button type="button" id="btnCopy">Salin</button>
+    <button type="button" id="btnKirim">Kirim Jawaban</button>
+  </div>
+</div>
+<div id="toast" role="status"></div>
+
+<script>
+(function(){
+  "use strict";
+  var KEY = "lkpd-bab6-v1";
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch(e){ state = {}; }
+
+  function el(id){ return document.getElementById(id); }
+  function mk(tag, cls, text){
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  function field(parent, id, labelText, ph){
+    var lab = mk("label", null, labelText); lab.setAttribute("for", id); parent.appendChild(lab);
+    var inp = mk("input"); inp.type = "text"; inp.id = id; inp.setAttribute("data-save","");
+    if (ph) inp.placeholder = ph;
+    parent.appendChild(inp);
+    return inp;
+  }
+
+  /* ---------- Bagian A rows ---------- */
+  var unsur = [
+    ["Nama dan nomor surah", "Letak judul surah di halaman"],
+    ["Nomor ayat (tulis 2 contoh)", "Contoh: ayat 5 dan 6"],
+    ["Penanda juz", "Simbol atau tulisan penanda juz"],
+    ["Penanda hizb", "Simbol atau tulisan penanda hizb"],
+    ["Tanda ruku' (huruf 'ain)", "Letak huruf 'ain di halaman"]
+  ];
+  var aRows = el("aRows");
+  unsur.forEach(function(u, i){
+    var box = mk("div", "rowline");
+    box.appendChild(mk("div", "unsur", (i+1) + ". " + u[0]));
+    var g = mk("div", "grid");
+    var w1 = mk("div"), w2 = mk("div");
+    field(w1, "aLetak" + i, "Simbol / letak di halaman", u[1]);
+    field(w2, "aFungsi" + i, "Fungsinya", "Fungsi unsur ini");
+    g.appendChild(w1); g.appendChild(w2); box.appendChild(g);
+    aRows.appendChild(box);
+  });
+  var aW = el("aWaqaf");
+  for (var w = 0; w < 5; w++){
+    var wb = mk("div", "rowline");
+    wb.appendChild(mk("div", "unsur", "Tanda waqaf " + (w+1)));
+    var wg = mk("div", "grid");
+    var ww1 = mk("div"), ww2 = mk("div");
+    field(ww1, "wSimbol" + w, "Simbolnya", "Contoh: \u0645 / \u062C / \u0644\u0627");
+    field(ww2, "wArti" + w, "Petunjuk bacaannya", "Berhenti / lanjut / pilihan");
+    wg.appendChild(ww1); wg.appendChild(ww2); wb.appendChild(wg);
+    aW.appendChild(wb);
+  }
+
+  /* ---------- Bagian B3 ---------- */
+  var klasData = [
+    ["Surah Al-Ikhlas", "4 ayat · menegaskan keesaan Allah · juz 30"],
+    ["Surah Al-Baqarah", "286 ayat · banyak aturan ibadah, keluarga, dan masyarakat · juz 1\u20133"],
+    ["Surah Al-Kahfi", "110 ayat · kisah Ashabul Kahf dan pemilik dua kebun · juz 15\u201316"]
+  ];
+  var bk = el("bKlas");
+  klasData.forEach(function(k, i){
+    var box = mk("div", "rowline");
+    box.appendChild(mk("div", "unsur", k[0]));
+    box.appendChild(mk("div", "hint", k[1]));
+    var lab = mk("label", null, "Klasifikasi"); lab.setAttribute("for", "kKlas" + i); box.appendChild(lab);
+    var sel = mk("select"); sel.id = "kKlas" + i; sel.setAttribute("data-save","");
+    ["", "Makkiyah", "Madaniyah"].forEach(function(o){
+      var op = mk("option", null, o === "" ? "— Pilih —" : o); op.value = o; sel.appendChild(op);
+    });
+    box.appendChild(sel);
+    field(box, "kCiri" + i, "Dua ciri pendukung", "Tulis 2 ciri dari penjelasan guru yang cocok");
+    bk.appendChild(box);
+  });
+
+  /* ---------- Bagian C profiles ---------- */
+  var cp = el("cProf");
+  for (var c = 0; c < 3; c++){
+    var pb = mk("div", "prof");
+    pb.appendChild(mk("div", "ptitle", "Surah ke-" + (c+1) + " yang ditentukan guru"));
+    var g = mk("div", "grid");
+    function cell(id, label, full){
+      var wdiv = mk("div", full ? "full" : null);
+      var lab = mk("label", null, label); lab.setAttribute("for", id); wdiv.appendChild(lab);
+      var inp = mk("input"); inp.type = "text"; inp.id = id; inp.setAttribute("data-save","");
+      wdiv.appendChild(inp); g.appendChild(wdiv);
+      return inp;
+    }
+    cell("cNama" + c, "Nama & nomor surah", true);
+    cell("cAyat" + c, "Jumlah ayat");
+    cell("cJuz" + c, "Letak juz / hizb");
+    cell("cRuku" + c, "Penanda ruku' ditemukan?");
+    cell("cWaqaf" + c, "Contoh tanda waqaf");
+    var wsel = mk("div");
+    var slab = mk("label", null, "Makkiyah / Madaniyah"); slab.setAttribute("for", "cKlas" + c); wsel.appendChild(slab);
+    var sel2 = mk("select"); sel2.id = "cKlas" + c; sel2.setAttribute("data-save","");
+    ["", "Makkiyah", "Madaniyah"].forEach(function(o){
+      var op = mk("option", null, o === "" ? "— Pilih —" : o); op.value = o; sel2.appendChild(op);
+    });
+    wsel.appendChild(sel2); g.appendChild(wsel);
+    cell("cSumber" + c, "Sumber yang dipakai", true);
+    pb.appendChild(g);
+    cp.appendChild(pb);
+  }
+
+  /* ---------- Bagian B1 hierarchy chips ---------- */
+  var words = ["SURAH", "AYAT", "JUZ", "HIZB", "RUKU'"];
+  var picked = Array.isArray(state._seq) ? state._seq.slice() : [];
+  var chipsBox = el("bChips"), seqBox = el("bSeq");
+  var chipEls = {};
+  words.forEach(function(wd){
+    var b = mk("button", "chip", wd); b.type = "button";
+    b.addEventListener("click", function(){
+      if (picked.indexOf(wd) >= 0) return;
+      picked.push(wd); saveSeq(); renderSeq();
+    });
+    chipEls[wd] = b; chipsBox.appendChild(b);
+  });
+  el("bReset").addEventListener("click", function(){ picked = []; saveSeq(); renderSeq(); });
+  function saveSeq(){ state._seq = picked.slice(); persist(); }
+  function renderSeq(){
+    seqBox.innerHTML = "";
+    if (!picked.length){
+      seqBox.appendChild(mk("span", "empty", "Urutanmu akan muncul di sini."));
+    } else {
+      picked.forEach(function(wd, i){
+        if (i > 0) seqBox.appendChild(mk("span", "arrow", "\u2192"));
+        seqBox.appendChild(mk("span", "item", wd));
+      });
+    }
+    words.forEach(function(wd){
+      var used = picked.indexOf(wd) >= 0;
+      chipEls[wd].disabled = used;
+      chipEls[wd].classList.toggle("picked", used);
+    });
+    updateProgress();
+  }
+
+  /* ---------- Autosave ---------- */
+  function persist(){
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){}
+    var n = el("saveNote");
+    if (n) n.textContent = "Tersimpan otomatis di perangkat ini.";
+  }
+  function bindSaves(){
+    var nodes = document.querySelectorAll("[data-save]");
+    nodes.forEach(function(n){
+      if (state[n.id] != null) n.value = state[n.id];
+      n.addEventListener("input", function(){ state[n.id] = n.value; persist(); updateProgress(); });
+      n.addEventListener("change", function(){ state[n.id] = n.value; persist(); updateProgress(); });
+    });
+  }
+
+  /* ---------- Progress ---------- */
+  function updateProgress(){
+    var nodes = document.querySelectorAll("[data-save]");
+    var total = nodes.length, filled = 0;
+    nodes.forEach(function(n){ if ((n.value || "").trim() !== "") filled++; });
+    total += 1; if (picked.length === words.length) filled += 1;
+    var pct = total ? Math.round(filled / total * 100) : 0;
+    el("progText").innerHTML = "Terisi <b>" + pct + "%</b><br>dari seluruh isian";
+  }
+
+  /* ---------- Compose answers ---------- */
+  function v(id){ var n = el(id); return n ? (n.value || "").trim() : ""; }
+  function compose(){
+    var L = [];
+    L.push("LKPD BAB VI — STRUKTUR AL-QUR'AN");
+    L.push("Al-Qur'an Hadis · Kelas X · MAN Kota Blitar");
+    L.push("");
+    L.push("Nama: " + v("fNama"));
+    L.push("Kelas: " + v("fKelas") + " · No. Absen: " + v("fAbsen"));
+    L.push("");
+    L.push("== BAGIAN A — Berburu Penanda Struktur ==");
+    L.push("Halaman mushaf yang diamati: " + v("aHalaman"));
+    unsur.forEach(function(u, i){
+      L.push((i+1) + ". " + u[0] + " — letak/simbol: " + v("aLetak" + i) + " · fungsi: " + v("aFungsi" + i));
+    });
+    L.push("Tanda waqaf yang ditemukan:");
+    for (var w = 0; w < 5; w++){
+      L.push("- " + v("wSimbol" + w) + ": " + v("wArti" + w));
+    }
+    L.push("");
+    L.push("== BAGIAN B — Hierarki dan Klasifikasi ==");
+    L.push("B1. Urutan hierarki: " + (picked.length ? picked.join(" \u2192 ") : "(belum disusun)"));
+    L.push("Penjelasan hubungan: " + v("bJelas"));
+    L.push("B2.1 Satu juz memuat lebih dari satu surah: " + v("bQ1"));
+    L.push("B2.2 Perbedaan unsur isi dan pembagian baca: " + v("bQ2"));
+    L.push("B3. Klasifikasi:");
+    klasData.forEach(function(k, i){
+      L.push("- " + k[0] + ": " + v("kKlas" + i) + " — ciri: " + v("kCiri" + i));
+    });
+    L.push("");
+    L.push("== BAGIAN C — Profil Tiga Surah ==");
+    for (var c = 0; c < 3; c++){
+      L.push((c+1) + ". " + v("cNama" + c) + " · " + v("cAyat" + c) + " ayat · juz/hizb: " + v("cJuz" + c) +
+             " · ruku': " + v("cRuku" + c) + " · waqaf: " + v("cWaqaf" + c) +
+             " · " + v("cKlas" + c) + " · sumber: " + v("cSumber" + c));
+    }
+    L.push("");
+    L.push("== BAGIAN D — Tiket Keluar ==");
+    L.push("Dua hal yang dipahami: " + v("dPaham"));
+    L.push("Satu unsur yang masih perlu diperiksa: " + v("dPeriksa"));
+    L.push("Satu tindakan bertanggung jawab: " + v("dTindak"));
+    return L.join("\n");
+  }
+
+  function toast(msg){
+    var t = el("toast"); t.textContent = msg; t.classList.add("show");
+    setTimeout(function(){ t.classList.remove("show"); }, 2600);
+  }
+  el("btnCopy").addEventListener("click", function(){
+    var text = compose();
+    function done(){ toast("Jawaban tersalin. Tempel dan kirim ke gurumu."); }
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done, function(){ fallback(); });
+    } else { fallback(); }
+    function fallback(){
+      var ta = mk("textarea"); ta.value = text;
+      ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); done(); }
+      catch(e){ toast("Gagal menyalin. Pakai tombol Unduh .txt."); }
+      document.body.removeChild(ta);
+    }
+  });
+  el("btnDl").addEventListener("click", function(){
+    var blob = new Blob([compose()], { type: "text/plain;charset=utf-8" });
+    var a = mk("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "LKPD-Bab6-" + (v("fNama") || "siswa").replace(/\s+/g, "_") + ".txt";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+    toast("Berkas jawaban diunduh.");
+  });
+
+  bindSaves();
+  renderSeq();
+  updateProgress();
+})();
+</script>
+<script>
+(function(){
+  "use strict";
+  var ROSTER = [["ADITYA RAMADHAN", "X-E", 1], ["AHMAD ANDIKA PRATAMA", "X-E", 2], ["AHMAD IZZUL HAQ", "X-E", 3], ["AISYHA NAGATA MARVA", "X-E", 4], ["AMELLYA PUTRI CAHYANI", "X-E", 5], ["AMIRA", "X-E", 6], ["ARDIANA GHANA ADJUSTA", "X-E", 7], ["AZZAHWA SHOFWATUN NAWA", "X-E", 8], ["CINTYA VANESYA NADINA PERMATA", "X-E", 9], ["DESITA DIKUL GOFILIN MUKAROMAH", "X-E", 10], ["DHONAN ANIQ JUNADILMOKO", "X-E", 11], ["FABIANO FATIR RAHMATULOH", "X-E", 12], ["FAIZA AZARIA SHAHNAZ", "X-E", 13], ["FARHAN AHMADA NAWFAL", "X-E", 14], ["FAZA FAUZAN AL MURTAZA", "X-E", 15], ["FIO MELKY NURYAHYA", "X-E", 16], ["HASBI 'ABDURRAHMAN AL MUGHITS", "X-E", 17], ["IKHSAN PURNA WIBOWO", "X-E", 18], ["IMADUDIN ZUFAR AZZAKY", "X-E", 19], ["MAULANA IQBAL NASRULLAH", "X-E", 20], ["MEILI SURYANINDYA MAHARANI", "X-E", 21], ["MIRZA ABBASY RAMADHAN", "X-E", 22], ["MOH. MUCHSON ISNANI", "X-E", 23], ["M. IBNU LATIF ABDILLAH", "X-E", 24], ["MUHAMMAD ALIEF NAIM", "X-E", 25], ["MUHAMMAD DEBY HASANUDIN AL F…", "X-E", 26], ["MUHAMMAD FIKRI AN NAFI", "X-E", 27], ["RAFFASYA ARKANANTA ALFARIZQI", "X-E", 28], ["NADHIFA RAHMA AQILA", "X-E", 29], ["NA'IMAH DWI NURJANNAH", "X-E", 30], ["NAJLA NAWAI AZZAHRA", "X-E", 31], ["NANDA AMIRUL LISAN AJI", "X-E", 32], ["NAVEYA CANTIKA ERYZA PUTRI", "X-E", 33], ["NAYLA CIVIVIA PUTRI", "X-E", 34], ["NOVITA AULIA AZZAHRA", "X-E", 35], ["SALSABILA NAILA ROATUSHOLEKAH", "X-E", 36], ["SAMARA SEKAR AYU DIAN AMBARUK…", "X-E", 37], ["SYLVI ANISA KUMALA SARI", "X-E", 38], ["LIONA AFRIDA PERLITA DEWI", "X-E", 39], ["ZAIN KHOLISOTUL AULIA", "X-E", 40], ["ABDULLAH HAZZA FACHRIZAL FAHMI", "X-F", 1], ["AGUSTIN HAVIZA PUTRI NOVITA SARI", "X-F", 2], ["AHMAD BAIHAKI", "X-F", 3], ["AHMAD GHIBRANI R.W", "X-F", 4], ["AHMAD TAQIYUDDIN RIFDI SIDQY", "X-F", 5], ["AHMADA ROBERT SAIFULLAH", "X-F", 6], ["AISYAH ZAYYAN BERLIANA ALIM", "X-F", 7], ["AKHMAD DIPO ALAM", "X-F", 8], ["ANANDA TRI LESATARI", "X-F", 9], ["ASYIFA NASWA YUDISETYA", "X-F", 10], ["BARRALIY GHAISAN SYAH WARDHAN", "X-F", 11], ["BIMA RIZQIAN BAIHAQI", "X-F", 12], ["ELVIRA DEWI MAYZUHRA", "X-F", 13], ["FAUZA AHMAD DANI", "X-F", 14], ["FAZA SYIBILLA SAKINA", "X-F", 15], ["FIORENZA CALLYSTA ZULFA M", "X-F", 16], ["HAYYATUN NISA AZIZAH", "X-F", 17], ["IRHAM NAUFAL ARFIANSYAH", "X-F", 18], ["ISBATUL KHAIRINA", "X-F", 19], ["JANE NAURA LISTYAPUTRI", "X-F", 20], ["JULIA KHANSA INDRA PRAKASIWI", "X-F", 21], ["KIMYKA NIO QIVARO", "X-F", 22], ["LAKEISHA LARASATI W", "X-F", 23], ["M. RENO MURTADHOH", "X-F", 24], ["M. ULYA KAFABULLAH", "X-F", 25], ["MECHELLA DEVITA PUTRI", "X-F", 26], ["MUHAMAD ILHAM NOVENDI", "X-F", 27], ["MUHAMMAD EKA FADIL", "X-F", 28], ["NABILA INDAH KHAIRUNNISA", "X-F", 29], ["NAJMA AMANINA NAURA AZIZAH", "X-F", 30], ["NILNA LAILATUL FAIRIYAH", "X-F", 31], ["RADITYA WILLY MUHAMMAD", "X-F", 32], ["RANIAH SOFIANA RAMADHANI", "X-F", 33], ["SAKHIYA HIKMATUL MAULA", "X-F", 34], ["SATRIA BAGASMADA PRATAMA", "X-F", 35], ["SHOFIA QOTHRUN NADA", "X-F", 36], ["SILVIA PUTRI NUR HIFA", "X-F", 37], ["SUCI RAHAYU", "X-F", 38], ["SYIFA SAFANA", "X-F", 39], ["ZIFANA LATISYA ALYA SAFIRA", "X-F", 40]];
+  var inp = document.getElementById("fNama");
+  var box = document.getElementById("namaResults");
+  var kEl = document.getElementById("fKelas");
+  var aEl = document.getElementById("fAbsen");
+  window.__pilihan = null;
+  function norm(s){ return (s || "").toUpperCase().replace(/[^A-Z0-9 ]/g, " ").replace(/\s+/g, " ").trim(); }
+  function fire(el){ el.dispatchEvent(new Event("input", { bubbles: true })); }
+  function cocok(){
+    for (var i = 0; i < ROSTER.length; i++){
+      if (ROSTER[i][0] === inp.value.trim() && ROSTER[i][1] === kEl.value.trim() && String(ROSTER[i][2]) === aEl.value.trim()){
+        return ROSTER[i];
+      }
+    }
+    return null;
+  }
+  function pilih(r){
+    inp.value = r[0]; kEl.value = r[1]; aEl.value = String(r[2]);
+    window.__pilihan = r;
+    fire(inp); fire(kEl); fire(aEl);
+    box.hidden = true; box.innerHTML = "";
+  }
+  function gambar(){
+    var q = norm(inp.value);
+    if (window.__pilihan && inp.value.trim() !== window.__pilihan[0]){
+      window.__pilihan = null; kEl.value = ""; aEl.value = ""; fire(kEl); fire(aEl);
+    }
+    if (q.length < 2){ box.hidden = true; box.innerHTML = ""; return; }
+    var hasil = ROSTER.filter(function(r){ return norm(r[0]).indexOf(q) >= 0; }).slice(0, 8);
+    box.innerHTML = "";
+    if (!hasil.length){
+      var d = document.createElement("div");
+      d.className = "none";
+      d.textContent = "Nama tidak ditemukan di daftar kelas. Periksa ejaannya atau tanya gurumu.";
+      box.appendChild(d);
+    } else {
+      hasil.forEach(function(r){
+        var b = document.createElement("button");
+        b.type = "button";
+        var s = document.createElement("span"); s.textContent = r[0];
+        var m = document.createElement("small"); m.textContent = r[1] + " · Absen " + r[2];
+        b.appendChild(s); b.appendChild(m);
+        b.addEventListener("click", function(){ pilih(r); });
+        box.appendChild(b);
+      });
+    }
+    box.hidden = false;
+  }
+  inp.addEventListener("input", gambar);
+  inp.addEventListener("focus", gambar);
+  document.addEventListener("click", function(e){
+    if (!box.contains(e.target) && e.target !== inp) box.hidden = true;
+  });
+  setTimeout(function(){ window.__pilihan = cocok(); }, 60);
+})();
+</script>
+<script>
+(function(){
+  "use strict";
+  var ENDPOINT = "https://script.google.com/macros/s/AKfycbxTtRdLjO6vLsz47qV6ny3PILs9jSU986YJ99jBQIt4aev-LkTTKsazzSF8uAQhP0VE2Q/exec";
+  var BATAS = new Date("2026-11-05T19:00:00+07:00").getTime();
+  function el(id){ return document.getElementById(id); }
+  function v(id){ var n = el(id); return n ? (n.value || "").trim() : ""; }
+  function toast(msg){
+    var t = el("toast"); t.textContent = msg; t.classList.add("show");
+    setTimeout(function(){ t.classList.remove("show"); }, 3200);
+  }
+  function payload(){
+    var st = {};
+    try { st = JSON.parse(localStorage.getItem("lkpd-bab6-v1") || "{}"); } catch(e){}
+    var waqaf = [];
+    for (var w = 0; w < 5; w++){
+      var s = v("wSimbol" + w), a = v("wArti" + w);
+      if (s || a) waqaf.push(s + ": " + a);
+    }
+    function klas(i){ return v("kKlas" + i) + (v("kCiri" + i) ? " — " + v("kCiri" + i) : ""); }
+    function prof(c){
+      return [v("cNama" + c), v("cAyat" + c) + " ayat", "juz/hizb: " + v("cJuz" + c),
+              "ruku': " + v("cRuku" + c), "waqaf: " + v("cWaqaf" + c),
+              v("cKlas" + c), "sumber: " + v("cSumber" + c)].join(" · ");
+    }
+    return {
+      kode: v("fKode"), nama: v("fNama"), kelas: v("fKelas"), absen: v("fAbsen"),
+      halaman: v("aHalaman"),
+      a1_letak: v("aLetak0"), a1_fungsi: v("aFungsi0"),
+      a2_letak: v("aLetak1"), a2_fungsi: v("aFungsi1"),
+      a3_letak: v("aLetak2"), a3_fungsi: v("aFungsi2"),
+      a4_letak: v("aLetak3"), a4_fungsi: v("aFungsi3"),
+      a5_letak: v("aLetak4"), a5_fungsi: v("aFungsi4"),
+      waqaf: waqaf.join("; "),
+      b1_urutan: (st._seq || []).join(" -> "),
+      b1_jelas: v("bJelas"), b21: v("bQ1"), b22: v("bQ2"),
+      b3_ikhlas: klas(0), b3_baqarah: klas(1), b3_kahfi: klas(2),
+      c1: prof(0), c2: prof(1), c3: prof(2),
+      d1: v("dPaham"), d2: v("dPeriksa"), d3: v("dTindak")
+    };
+  }
+  var btn = el("btnKirim");
+  if (Date.now() > BATAS){
+    btn.disabled = true; btn.textContent = "Kirim Ditutup";
+  }
+  btn.addEventListener("click", function(){
+    if (!ENDPOINT){ toast("Tombol kirim belum aktif. Pakai tombol Salin atau Unduh dulu."); return; }
+    if (Date.now() > BATAS){ toast("Sudah lewat batas kirim (5 Nov 2026, 19.00 WIB)."); return; }
+    var p = payload();
+    if (!window.__pilihan){ toast("Pilih namamu dari daftar dulu: ketik namamu, lalu ketuk namamu yang muncul."); return; }
+    if (!p.kode){ toast("Isi kode kelas dari gurumu dulu."); return; }
+    btn.disabled = true; btn.textContent = "Mengirim…";
+    fetch(ENDPOINT, {
+      method: "POST", mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(p)
+    }).then(function(){
+      btn.textContent = "Sudah Terkirim";
+      toast("Jawaban terkirim. Sebutkan namamu ke guru untuk dicek di tabelnya.");
+    }).catch(function(){
+      btn.disabled = false; btn.textContent = "Kirim Jawaban";
+      toast("Gagal mengirim, jaringan bermasalah. Coba lagi atau pakai Salin/Unduh.");
+    });
+  });
+})();
+</script>
+</body>
+</html>
