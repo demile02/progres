@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Kebun Binatang Komen — Jalan-jalan di Zoo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Reenie+Beanie&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FDFCF8; --ink:#2E2A24; --accent:#E86A2C; --leaf:#4E7A3A;
+    --card-shadow:0 12px 32px rgba(46,42,36,.18);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden;background:#9CC184;font-family:'Outfit',sans-serif;color:var(--ink)}
+  #scene{position:fixed;inset:0;display:block;touch-action:none}
+  .hud{position:fixed;z-index:10}
+  #brand{top:14px;left:14px;background:var(--paper);border-radius:20px;padding:10px 16px 12px;box-shadow:var(--card-shadow);max-width:min(78vw,340px)}
+  #brand .wordmark{font-family:'Reenie Beanie',cursive;font-size:30px;line-height:.95;color:var(--leaf)}
+  #brand .sub{font-size:12.5px;font-weight:600;letter-spacing:.02em;margin-top:2px}
+  #brand .day{display:inline-block;margin-top:7px;background:#EFEDF4;color:#6F66A3;font-weight:800;font-size:11.5px;padding:3px 9px;border-radius:999px}
+  #hint{top:14px;right:14px;background:rgba(253,252,248,.92);border-radius:14px;padding:8px 12px;font-size:12px;font-weight:600;box-shadow:var(--card-shadow);text-align:right;line-height:1.5}
+  #hint kbd{background:var(--ink);color:var(--paper);border-radius:5px;padding:0 5px;font-family:inherit;font-size:11px}
+  #card{left:50%;bottom:18px;transform:translate(-50%,140%);transition:transform .35s cubic-bezier(.2,.9,.25,1);width:min(92vw,430px);background:var(--paper);border-radius:24px;box-shadow:var(--card-shadow);padding:16px 18px}
+  #card.show{transform:translate(-50%,0)}
+  #card .species{font-size:11.5px;font-weight:800;letter-spacing:.09em;color:var(--accent);text-transform:uppercase}
+  #card h2{font-size:24px;font-weight:800;line-height:1.1;margin:2px 0 4px}
+  #card p{font-size:14px;line-height:1.45}
+  #card .from{margin-top:9px;font-size:12.5px;font-weight:600;color:#6F66A3}
+  #joy{position:fixed;z-index:10;left:22px;bottom:24px;width:118px;height:118px;border-radius:50%;background:rgba(253,252,248,.35);border:2px solid rgba(253,252,248,.65);display:none}
+  #joyKnob{position:absolute;left:50%;top:50%;width:50px;height:50px;border-radius:50%;background:var(--paper);box-shadow:0 4px 14px rgba(46,42,36,.3);transform:translate(-50%,-50%)}
+  @media (pointer:coarse){ #joy{display:block} #hint .keys{display:none} }
+  #err{position:fixed;inset:0;display:none;place-items:center;background:var(--paper);z-index:50;padding:24px;text-align:center}
+  #err .box{max-width:420px}
+  #err h1{font-family:'Reenie Beanie',cursive;font-size:40px;color:var(--leaf)}
+  #err p{margin-top:8px;font-size:15px;line-height:1.5}
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+
+<div class="hud" id="brand">
+  <div class="wordmark">Kebun Binatang Komen</div>
+  <div class="sub">Zoo ini dibangun dari komentar. Satu hewan per hari, namanya dari kamu.</div>
+  <span class="day">Hari ke-1 · denah induk v1.1</span>
+</div>
+
+<div class="hud" id="hint">
+  <span class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> atau tombol panah buat jalan<br></span>
+  Dekati petak kandang buat kenalan sama penghuninya
+</div>
+
+<div class="hud" id="card">
+  <div class="species" id="cardSpecies"></div>
+  <h2 id="cardName"></h2>
+  <p id="cardText"></p>
+  <div class="from" id="cardFrom"></div>
+</div>
+
+<div id="joy"><div id="joyKnob"></div></div>
+
+<div id="err"><div class="box">
+  <h1>Zoo-nya belum bisa dibuka</h1>
+  <p>Peramban ini tidak menjalankan grafis 3D (WebGL) atau koneksi ke pustaka 3D terputus. Coba buka lagi dari Chrome atau Safari terbaru.</p>
+</div></div>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+/* Denah induk v1.1 (~/workspace/zoo-komen/denah/DENAH.md) dalam angka.
+   Koordinat dunia: x barat(-) ke timur(+), z utara(-) ke selatan(+).
+   Episode baru cukup mengubah status/nama di daftar petak ini. */
+const BLOCKS = [
+  { id:'cadangan', label:'LAHAN CADANGAN', cx:-86, cz:-72, w:76, d:40, tint:0xefece4 },
+  { id:'karnivora', label:'BLOK C · KARNIVORA', cx:0, cz:-72, w:76, d:40, tint:0xf2d7c9 },
+  { id:'savana', label:'BLOK B · SAVANA', cx:86, cz:-72, w:76, d:40, tint:0xf6ebc4 },
+  { id:'air', label:'BLOK D · ZONA AIR', cx:-86, cz:-24, w:76, d:40, tint:0xd8edf7 },
+  { id:'nusantara', label:'BLOK H · NUSANTARA', cx:0, cz:-24, w:76, d:40, tint:0xe2f0d6 },
+  { id:'pegunungan', label:'BLOK I · PEGUNUNGAN', cx:86, cz:-24, w:76, d:40, tint:0xede7d8 },
+  { id:'primata', label:'BLOK A · PRIMATA', cx:-86, cz:24, w:76, d:40, tint:0xdff0d2 },
+  { id:'edukasi', label:'AREA EDUKASI', cx:0, cz:24, w:76, d:40, tint:0xfdf3dc },
+  { id:'aviari', label:'BLOK E · AVIARI', cx:86, cz:24, w:76, d:40, tint:0xe7e1f5 },
+  { id:'servis', label:'ZONA SERVIS', cx:-86, cz:72, w:76, d:40, tint:0xe9e5dc },
+  { id:'plaza', label:'PLAZA MASUK', cx:0, cz:72, w:76, d:40, tint:0xfdebd2 },
+  { id:'sentuh', label:'BLOK G · SENTUH', cx:86, cz:61, w:76, d:18, tint:0xfbe3ee },
+  { id:'reptil', label:'BLOK F · REPTIL', cx:86, cz:81, w:76, d:18, tint:0xdce9e4 },
+];
+const G_PRIMATA=0xa9c47a, G_SAVANA=0xd9c98c, G_KARNI=0xc9b096, G_AIR=0x9fc48a,
+      G_AVI=0xb3a8d4, G_NUS=0x9dc48d, G_GUN=0xbfb49e, G_REP=0x9db8a9, G_SEN=0xd9a8bf;
+const PLOTS = [
+  { code:'A1', block:'Blok A · Primata', cx:-112, cz:33, w:22, d:16, ground:G_PRIMATA,
+    animal:{ name:'Galang', species:'Kera ekor panjang',
+      text:'Penghuni pertama zoo. Lincah, suka memperhatikan pengunjung yang baru datang, lalu pura-pura tidak peduli.',
+      from:'Hewan pertama, dari komentar paling disukai di video Day 1' } },
+  { code:'A2', block:'Blok A · Primata', cx:-86, cz:33, w:22, d:16, ground:G_PRIMATA, use:'primata kecil' },
+  { code:'A3', block:'Blok A · Primata', cx:-60, cz:33, w:22, d:16, ground:G_PRIMATA, use:'primata kecil lain' },
+  { code:'A4', block:'Blok A · Primata', cx:-112, cz:15, w:22, d:16, ground:G_PRIMATA, use:'primata besar' },
+  { code:'A5', block:'Blok A · Primata', cx:-86, cz:15, w:22, d:16, ground:G_PRIMATA, use:'primata besar lain' },
+  { code:'A6', block:'Blok A · Primata', cx:-60, cz:15, w:22, d:16, ground:G_PRIMATA, use:'primata malam' },
+  { code:'B1', block:'Blok B · Savana', cx:58, cz:-72, w:44, d:36, ground:G_SAVANA, use:'herbivora besar campuran' },
+  { code:'B2', block:'Blok B · Savana', cx:92, cz:-72, w:20, d:36, ground:G_SAVANA, use:'herbivora besar kedua' },
+  { code:'B3', block:'Blok B · Savana', cx:112, cz:-81, w:20, d:17, ground:G_SAVANA, use:'herbivora sedang' },
+  { code:'B4', block:'Blok B · Savana', cx:112, cz:-63, w:20, d:17, ground:G_SAVANA, use:'burung savana' },
+  { code:'C1', block:'Blok C · Karnivora', cx:0, cz:-86, w:68, d:8.5, ground:G_KARNI, use:'kucing besar' },
+  { code:'C2', block:'Blok C · Karnivora', cx:0, cz:-76, w:68, d:8.5, ground:G_KARNI, use:'kucing besar kedua' },
+  { code:'C3', block:'Blok C · Karnivora', cx:0, cz:-66, w:68, d:8.5, ground:G_KARNI, use:'kucing sedang' },
+  { code:'C4', block:'Blok C · Karnivora', cx:0, cz:-56, w:68, d:8.5, ground:G_KARNI, use:'beruang, serigala, hyena' },
+  { code:'D1', block:'Blok D · Zona Air', cx:-74, cz:-33, w:22, d:15, ground:G_AIR, use:'semi-akuatik' },
+  { code:'D2', block:'Blok D · Zona Air', cx:-74, cz:-15, w:22, d:15, ground:G_AIR, use:'unggas air' },
+  { code:'D3', block:'Blok D · Zona Air', cx:-102, cz:-9, w:24, d:6, ground:G_AIR, use:'akuatik' },
+  { code:'D4', block:'Blok D · Zona Air', cx:-56, cz:-24, w:14, d:20, ground:G_AIR, use:'gedung akuarium' },
+  { code:'E2', block:'Blok E · Aviari', cx:94, cz:15, w:52, d:15, ground:G_AVI, use:'burung pemangsa' },
+  { code:'E3', block:'Blok E · Aviari', cx:94, cz:33, w:52, d:15, ground:G_AVI, use:'burung kicau dan paruh bengkok' },
+  { code:'E4', block:'Blok E · Aviari', cx:56, cz:41, w:30, d:6, ground:G_AVI, use:'kolam burung air' },
+  { code:'F1', block:'Blok F · Reptil', cx:60, cz:81, w:20, d:11, ground:G_REP, use:'rumah reptil' },
+  { code:'F2', block:'Blok F · Reptil', cx:86, cz:81, w:20, d:11, ground:G_REP, use:'rumah nokturnal' },
+  { code:'F3', block:'Blok F · Reptil', cx:112, cz:81, w:20, d:11, ground:G_REP, use:'amfibi dan reptil kecil' },
+  { code:'G1', block:'Blok G · Sentuh', cx:60, cz:61, w:20, d:11, ground:G_SEN, use:'hewan jinak' },
+  { code:'G2', block:'Blok G · Sentuh', cx:86, cz:61, w:20, d:11, ground:G_SEN, use:'kura-kura darat' },
+  { code:'G3', block:'Blok G · Sentuh', cx:112, cz:61, w:20, d:11, ground:G_SEN, use:'hewan jinak kedua' },
+  { code:'H1', block:'Blok H · Nusantara', cx:-19, cz:-33, w:34, d:17, ground:G_NUS, use:'komodo' },
+  { code:'H2', block:'Blok H · Nusantara', cx:19, cz:-33, w:34, d:17, ground:G_NUS, use:'anoa, babirusa' },
+  { code:'H3', block:'Blok H · Nusantara', cx:-19, cz:-15, w:34, d:17, ground:G_NUS, use:'cendrawasih, kasuari' },
+  { code:'H4', block:'Blok H · Nusantara', cx:19, cz:-15, w:34, d:17, ground:G_NUS, use:'badak, banteng' },
+  { code:'I1', block:'Blok I · Pegunungan', cx:62, cz:-24, w:44, d:36, ground:G_GUN, use:'padang pegunungan' },
+  { code:'I2', block:'Blok I · Pegunungan', cx:106, cz:-33, w:32, d:15, ground:G_GUN, use:'panda merah' },
+  { code:'I3', block:'Blok I · Pegunungan', cx:106, cz:-15, w:32, d:15, ground:G_GUN, use:'kucing pegunungan' },
+];
+const BUILDINGS = [
+  { label:'Kantor direktur', cx:-104, cz:62, w:15, d:9 },
+  { label:'Klinik hewan', cx:-84, cz:62, w:15, d:9 },
+  { label:'Karantina', cx:-104, cz:84, w:15, d:9 },
+  { label:'Dapur pakan', cx:-88, cz:84, w:11, d:9 },
+  { label:'Gudang', cx:-76, cz:84, w:9, d:9 },
+  { label:'Loket', cx:-14, cz:61, w:11, d:7 },
+  { label:'Papan direktur', cx:10, cz:61, w:13, d:7 },
+  { label:'Mushola', cx:-14, cz:84, w:11, d:7 },
+  { label:'Suvenir', cx:4, cz:84, w:9, d:7 },
+  { label:'WC', cx:16, cz:84, w:7, d:7 },
+  { label:'Area piknik + food court', cx:16, cz:36, w:20, d:7 },
+  { label:'Area bermain anak', cx:-18, cz:36, w:18, d:7 },
+  { label:'Akuarium', tag:'PETAK D4', cx:-56, cz:-24, w:11, d:16 },
+];
+
+const canvas = document.getElementById('scene');
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
+} catch(e) {
+  document.getElementById('err').style.display = 'grid';
+  throw e;
+}
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x9CC184);
+scene.fog = new THREE.Fog(0x9CC184, 150, 400);
+
+const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, .1, 600);
+
+const sun = new THREE.DirectionalLight(0xFFF3D6, 2.6);
+sun.position.set(80, 120, 55);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left = -160; sun.shadow.camera.right = 160;
+sun.shadow.camera.top = 160; sun.shadow.camera.bottom = -160;
+scene.add(sun);
+scene.add(new THREE.HemisphereLight(0xeaf6ff, 0x6d8f57, 1.15));
+
+const MAT = {
+  grass:  new THREE.MeshLambertMaterial({ color:0x7cab58 }),
+  wood:   new THREE.MeshLambertMaterial({ color:0x8a6742 }),
+  woodD:  new THREE.MeshLambertMaterial({ color:0x6f5133 }),
+  leaf:   new THREE.MeshLambertMaterial({ color:0x4e7a3a }),
+  leaf2:  new THREE.MeshLambertMaterial({ color:0x63914a }),
+  trunk:  new THREE.MeshLambertMaterial({ color:0x77562f }),
+  rock:   new THREE.MeshLambertMaterial({ color:0xa9a294 }),
+  water:  new THREE.MeshLambertMaterial({ color:0x5ea8c9 }),
+  wall:   new THREE.MeshLambertMaterial({ color:0xf3ead8 }),
+  roof:   new THREE.MeshLambertMaterial({ color:0xb0562f }),
+  rail:   new THREE.MeshLambertMaterial({ color:0x8a8578 }),
+};
+function box(w,h,d,mat,x,y,z,parent=scene){
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat);
+  m.position.set(x,y,z); m.castShadow = true; m.receiveShadow = true;
+  parent.add(m); return m;
+}
+function cyl(rt,rb,h,mat,x,y,z,parent=scene,seg=10){
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg), mat);
+  m.position.set(x,y,z); m.castShadow = true; m.receiveShadow = true;
+  parent.add(m); return m;
+}
+function flatRect(cx,cz,w,d,color,y=.015){
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w,d),
+    new THREE.MeshLambertMaterial({ color }));
+  m.rotation.x = -Math.PI/2; m.position.set(cx,y,cz); m.receiveShadow = true;
+  scene.add(m); return m;
+}
+
+const colliders = [];
+function collideBox(cx,cz,w,d){
+  colliders.push({ x0:cx-w/2-.4, x1:cx+w/2+.4, z0:cz-d/2-.4, z1:cz+d/2+.4, box:true });
+}
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(300,220), MAT.grass);
+ground.rotation.x = -Math.PI/2; ground.receiveShadow = true;
+scene.add(ground);
+
+/* Jalan pasir mengikuti denah v1.1: keliling + sabuk antarbaris + poros antarblok */
+flatRect(0, -88, 248, 7, 0xe3cf9e, .02);
+flatRect(0, 88, 248, 7, 0xe3cf9e, .02);
+flatRect(-120, 0, 7, 176, 0xe3cf9e, .02);
+flatRect(120, 0, 7, 176, 0xe3cf9e, .02);
+flatRect(0, -48, 248, 7, 0xe3cf9e, .02);
+flatRect(0, 0, 248, 7, 0xe3cf9e, .02);
+flatRect(0, 48, 248, 7, 0xe3cf9e, .02);
+flatRect(-43, 0, 7, 176, 0xe3cf9e, .02);
+flatRect(43, 0, 7, 176, 0xe3cf9e, .02);
+flatRect(0, 68, 7, 40, 0xe3cf9e, .02);
+
+/* Jalur kereta keliling di sisi dalam pagar + papan stasiun */
+flatRect(-114, 0, 1.6, 168, 0x8a8578, .03);
+flatRect(114, 0, 1.6, 168, 0x8a8578, .03);
+flatRect(0, -84, 228, 1.6, 0x8a8578, .03);
+flatRect(0, 84, 228, 1.6, 0x8a8578, .03);
+
+function textSprite(top, bottom, scale=6, accent='#E86A2C'){
+  const cv = document.createElement('canvas'); cv.width = 512; cv.height = 160;
+  const c = cv.getContext('2d');
+  c.fillStyle = '#fdfcf8'; c.beginPath(); c.roundRect(0,0,512,160,36); c.fill();
+  c.textAlign = 'center';
+  c.fillStyle = accent; c.font = '800 34px Outfit, sans-serif';
+  c.fillText(top, 256, 62);
+  c.fillStyle = '#2E2A24'; c.font = '800 50px Outfit, sans-serif';
+  c.fillText(bottom, 256, 126);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map:new THREE.CanvasTexture(cv), transparent:true }));
+  sp.scale.set(scale, scale*160/512, 1);
+  return sp;
+}
+[[10,80,'Stasiun Gerbang'],[110,-44,'Stasiun Savana'],[-110,-2,'Stasiun Danau']].forEach(([x,z,lab])=>{
+  const s = textSprite('KERETA KELILING', lab, 5, '#4E7A3A');
+  s.position.set(x, 4.4, z); scene.add(s);
+});
+
+/* Pagar keliling kebun */
+{
+  const post = (x,z)=>cyl(.12,.12,2,MAT.woodD,x,1,z);
+  for(let x=-128; x<=128; x+=4){ post(x,-94); post(x,94); }
+  for(let z=-90; z<=90; z+=4){ post(-128,z); post(128,z); }
+  const rail = (w,x,z,rot)=>{
+    const r1 = box(w,.14,.1,MAT.wood,x,1.35,z); r1.rotation.y = rot;
+    const r2 = box(w,.14,.1,MAT.wood,x,.6,z); r2.rotation.y = rot;
+  };
+  rail(256,0,-94,0); rail(256,0,94,0);
+  rail(188,-128,0,Math.PI/2); rail(188,128,0,Math.PI/2);
+  collideBox(0,-94.5,260,1); collideBox(0,94.5,260,1);
+  collideBox(-128.5,0,1,192); collideBox(128.5,0,1,192);
+}
+
+/* Gerbang utama, sejajar plaza (x 0) */
+{
+  const g = new THREE.Group();
+  cyl(.55,.65,9,MAT.trunk,-6,4.5,93,g); cyl(.55,.65,9,MAT.trunk,6,4.5,93,g);
+  box(15,1.1,1.6,MAT.woodD,0,8.6,93,g);
+  const signC = document.createElement('canvas'); signC.width = 1024; signC.height = 160;
+  const c = signC.getContext('2d');
+  c.fillStyle = '#6f5133'; c.fillRect(0,0,1024,160);
+  c.fillStyle = '#fdfcf8'; c.font = '800 74px Outfit, sans-serif';
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText('KEBUN BINATANG KOMEN', 512, 84);
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(13.4,2.1),
+    new THREE.MeshBasicMaterial({ map:new THREE.CanvasTexture(signC) }));
+  sign.position.set(0,8.6,93.85); g.add(sign);
+  scene.add(g);
+}
+
+/* Warna dasar tiap blok + papan nama blok di tepi jalan */
+for(const b of BLOCKS){
+  flatRect(b.cx, b.cz, b.w, b.d, b.tint, .012);
+  const sign = textSprite('KEBUN BINATANG KOMEN', b.label, 10, '#4E7A3A');
+  const sz = b.cz > 60 ? b.cz - b.d/2 - 2.4 : b.cz + b.d/2 + 2.4;
+  sign.position.set(b.cx, 5.6, sz);
+  scene.add(sign);
+}
+
+/* Pagar petak: tiang + dua palang di empat sisi */
+function fencePlot(p){
+  flatRect(p.cx, p.cz, p.w, p.d, p.ground, .018);
+  const x0=p.cx-p.w/2, x1=p.cx+p.w/2, z0=p.cz-p.d/2, z1=p.cz+p.d/2;
+  const post = (x,z)=>cyl(.09,.09,1.5,MAT.woodD,x,.75,z);
+  const rail = (len,x,z,rot)=>{
+    const r1 = box(len,.12,.08,MAT.wood,x,.95,z); r1.rotation.y = rot;
+    const r2 = box(len,.12,.08,MAT.wood,x,.45,z); r2.rotation.y = rot;
+  };
+  const step = Math.max(2, Math.floor(Math.min(p.w,p.d)/4));
+  for(let x=x0; x<=x1+.01; x+=step){ post(x,z0); post(x,z1); }
+  for(let z=z0+step; z<z1; z+=step){ post(x0,z); post(x1,z); }
+  rail(p.w,p.cx,z0,0); rail(p.w,p.cx,z1,0);
+  rail(p.d,x0,p.cz,Math.PI/2); rail(p.d,x1,p.cz,Math.PI/2);
+  collideBox(p.cx, p.cz, p.w, p.d);
+  const label = p.animal ? p.animal.name : 'Kosong';
+  const sign = textSprite(p.code, label, 5.4);
+  sign.position.set(p.cx, 3.8, z1 + 1.5);
+  scene.add(sign);
+}
+PLOTS.forEach(fencePlot);
+
+/* Danau besar di Zona Air + kubah aviari E1 + panggung edukasi */
+{
+  const pond = new THREE.Mesh(new THREE.CircleGeometry(11, 28), MAT.water);
+  pond.rotation.x = -Math.PI/2; pond.position.set(-102,.03,-24);
+  pond.receiveShadow = true; scene.add(pond);
+  collideBox(-102, -24, 23, 23);
+
+  const dome = new THREE.Mesh(
+    new THREE.SphereGeometry(12.5, 18, 10, 0, Math.PI*2, 0, Math.PI/2),
+    new THREE.MeshLambertMaterial({ color:0xcfc6ea, transparent:true, opacity:.38, side:THREE.DoubleSide }));
+  dome.position.set(56, 0, 24); scene.add(dome);
+  cyl(12.6, 12.6, .5, MAT.rock, 56, .25, 24, scene, 28);
+  const sign = textSprite('E1', 'Kubah Burung', 5.4);
+  sign.position.set(56, 5, 38.5); scene.add(sign);
+  collideBox(56, 24, 26, 26);
+
+  cyl(5.5, 6.1, .7, MAT.rock, -16, .35, 14, scene, 20);
+  const signE = textSprite('PANGGUNG', 'Edukasi', 5.4, '#4E7A3A');
+  signE.position.set(-16, 4.4, 21.5); scene.add(signE);
+  collideBox(-16, 14, 13, 13);
+}
+
+/* Bangunan fasilitas: dinding krem + atap coklat bata + papan nama */
+for(const b of BUILDINGS){
+  box(b.w, 3, b.d, MAT.wall, b.cx, 1.5, b.cz);
+  box(b.w+.8, .5, b.d+.8, MAT.roof, b.cx, 3.25, b.cz);
+  const sign = textSprite(b.tag || 'FASILITAS', b.label, 4.8, '#4E7A3A');
+  sign.position.set(b.cx, 5.2, b.cz + b.d/2 + 1.7);
+  scene.add(sign);
+  collideBox(b.cx, b.cz, b.w, b.d);
+}
+
+/* Pohon di sepanjang jalan dan di dalam petak besar */
+function tree(x,z,s=1){
+  const g = new THREE.Group(); g.position.set(x,0,z);
+  cyl(.28*s,.4*s,2.6*s,MAT.trunk,0,1.3*s,0,g);
+  const a = new THREE.Mesh(new THREE.SphereGeometry(2.1*s,10,8), MAT.leaf);
+  a.position.y = 4*s; a.castShadow = true; g.add(a);
+  const b = new THREE.Mesh(new THREE.SphereGeometry(1.5*s,10,8), MAT.leaf2);
+  b.position.set(.9*s,5.1*s,.3*s); b.castShadow = true; g.add(b);
+  scene.add(g);
+  colliders.push({ x, z, r:1.1*s });
+}
+[[-120,-88],[120,-88],[-120,88],[120,88],[-48,-60],[48,-60],[-48,60],[48,60],
+ [-48,-12],[48,-12],[-48,36],[48,36],[-20,-88],[20,-88],[-70,-48],[70,48],
+ [50,-84],[68,-60],[54,-32],[72,-16],[-100,-80],[-72,-62],[-116,-38],
+ [-38,-70],[38,-24],[-38,70],[100,48],[-70,88],[24,88]].forEach((p,i)=>tree(p[0],p[1], .9+(i%4)*.15));
+
+/* Kera low-poly penghuni A1 */
+function monkey(){
+  const g = new THREE.Group();
+  const fur = new THREE.MeshLambertMaterial({ color:0x7a5c3e });
+  const face = new THREE.MeshLambertMaterial({ color:0xd9b98f });
+  const body = new THREE.Mesh(new THREE.SphereGeometry(1.05,12,10), fur);
+  body.scale.y = 1.15; body.position.y = 1.35; body.castShadow = true; g.add(body);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(.68,12,10), fur);
+  head.position.y = 2.85; head.castShadow = true; g.add(head);
+  const muzzle = new THREE.Mesh(new THREE.SphereGeometry(.4,10,8), face);
+  muzzle.position.set(0,2.7,.5); muzzle.scale.set(1,.75,.8); g.add(muzzle);
+  [-1,1].forEach(s=>{
+    const ear = new THREE.Mesh(new THREE.SphereGeometry(.26,8,8), face);
+    ear.position.set(.68*s,2.95,0); g.add(ear);
+    const arm = cyl(.16,.14,1.5,fur,.95*s,1.5,.15,g); arm.rotation.z = .5*s;
+    const leg = cyl(.2,.17,1.1,fur,.55*s,.45,.45,g); leg.rotation.x = -1.1;
+  });
+  const pts = [];
+  for(let i=0;i<=10;i++){
+    const t = i/10;
+    pts.push(new THREE.Vector3(-.7 - Math.sin(t*2.4)*.8, .5 + t*1.9, -.6 - Math.cos(t*2.4)*.3));
+  }
+  const tail = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 16, .11, 6), fur);
+  tail.castShadow = true; g.add(tail);
+  return g;
+}
+{
+  cyl(2.2,2.8,1,MAT.rock,-109,.5,35);
+  const m = monkey(); m.position.set(-109, 1, 35); m.rotation.y = .7;
+  scene.add(m);
+}
+
+/* Pengunjung */
+const visitor = new THREE.Group();
+{
+  const shirt = new THREE.MeshLambertMaterial({ color:0xE86A2C });
+  const skin = new THREE.MeshLambertMaterial({ color:0xe8b98d });
+  const pants = new THREE.MeshLambertMaterial({ color:0x44536b });
+  box(.85,.8,.5,pants,0,.4,0,visitor);
+  cyl(.42,.5,1.05,shirt,0,1.3,0,visitor,12);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(.42,12,10), skin);
+  head.position.y = 2.25; head.castShadow = true; visitor.add(head);
+  cyl(.45,.46,.18,new THREE.MeshLambertMaterial({ color:0x4E7A3A }),0,2.55,0,visitor,12);
+  visitor.traverse(o=>{ if(o.isMesh) o.castShadow = true; });
+}
+visitor.position.set(0, 0, 87);
+scene.add(visitor);
+/* Gerak: WASD/panah + joystick sentuh */
+const keys = {};
+addEventListener('keydown', e=>{ keys[e.key.toLowerCase()] = true; });
+addEventListener('keyup',   e=>{ keys[e.key.toLowerCase()] = false; });
+const joyVec = { x:0, y:0 };
+{
+  const joy = document.getElementById('joy'), knob = document.getElementById('joyKnob');
+  let pid = null;
+  const setKnob = (dx,dy)=>{ knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`; };
+  joy.addEventListener('pointerdown', e=>{ pid = e.pointerId; joy.setPointerCapture(pid); });
+  joy.addEventListener('pointermove', e=>{
+    if(e.pointerId !== pid) return;
+    const r = joy.getBoundingClientRect();
+    let dx = e.clientX - (r.left + r.width/2), dy = e.clientY - (r.top + r.height/2);
+    const len = Math.hypot(dx,dy), max = 38;
+    if(len > max){ dx *= max/len; dy *= max/len; }
+    setKnob(dx,dy);
+    joyVec.x = dx/max; joyVec.y = dy/max;
+  });
+  const end = e=>{ if(e.pointerId === pid){ pid = null; joyVec.x = joyVec.y = 0; setKnob(0,0); } };
+  joy.addEventListener('pointerup', end); joy.addEventListener('pointercancel', end);
+}
+
+/* Kartu info: petak terdekat dari titik pandang di depan petak */
+const SPOTS = PLOTS.map(p=>({ id:p.code, x:p.cx, z:p.cz + p.d/2, plot:p }));
+SPOTS.push(
+  { id:'E1', x:56, z:37, fixed:{ species:'Blok E · Aviari', name:'E1 · Kubah Burung Tropis',
+    text:'Kubah jaring besar. Pengunjung masuk dan berjalan di antara burung tropis yang terbang bebas.',
+    from:'Masih kosong, menunggu komentar teratas' } },
+  { id:'DANAU', x:-102, z:-12, fixed:{ species:'Blok D · Zona Air', name:'Danau Zoo',
+    text:'Sumber air zona barat, sekarang jauh lebih besar. Tepi danau ini nanti jadi tempat melihat penghuni D1, D2, dan D3.',
+    from:'Bagian dari denah induk v1.1' } },
+  { id:'PANGGUNG', x:-16, z:21, fixed:{ species:'Area Edukasi', name:'Panggung Edukasi',
+    text:'Di sini direktur mengumumkan hewan baru dan keeper bercerita soal penghuni zoo.',
+    from:'Bagian dari denah induk v1.1' } },
+);
+const card = document.getElementById('card');
+const cardEls = {
+  species: document.getElementById('cardSpecies'),
+  name: document.getElementById('cardName'),
+  text: document.getElementById('cardText'),
+  from: document.getElementById('cardFrom'),
+};
+let cardFor = '__none__';
+function updateCard(){
+  let near = null, best = 1e9;
+  for(const s of SPOTS){
+    const d = Math.hypot(visitor.position.x - s.x, visitor.position.z - s.z);
+    if(d < best){ best = d; near = s; }
+  }
+  const id = (near && best < 11) ? near.id : null;
+  if(id === cardFor) return;
+  cardFor = id;
+  if(!near){ card.classList.remove('show'); return; }
+  if(near.fixed){
+    cardEls.species.textContent = near.fixed.species;
+    cardEls.name.textContent = near.fixed.name;
+    cardEls.text.textContent = near.fixed.text;
+    cardEls.from.textContent = near.fixed.from;
+  } else if(near.plot.animal){
+    const a = near.plot.animal;
+    cardEls.species.textContent = near.plot.code + ' · ' + a.species;
+    cardEls.name.textContent = a.name;
+    cardEls.text.textContent = a.text;
+    cardEls.from.textContent = a.from;
+  } else {
+    cardEls.species.textContent = near.plot.code + ' · ' + near.plot.block;
+    cardEls.name.textContent = 'Masih kosong';
+    cardEls.text.textContent = 'Petak untuk ' + near.plot.use + '. Penghuninya dipilih dari komentar paling disukai di video terbaru.';
+    cardEls.from.textContent = 'Menunggu komentar teratas';
+  }
+  card.classList.add('show');
+}
+
+const clock = new THREE.Clock();
+let heading = Math.PI;
+const camPos = new THREE.Vector3(0, 16, 103);
+function tick(){
+  requestAnimationFrame(tick);
+  const dt = Math.min(clock.getDelta(), .05);
+  const t = clock.elapsedTime;
+
+  let mx = 0, mz = 0;
+  if(keys['w'] || keys['arrowup']) mz -= 1;
+  if(keys['s'] || keys['arrowdown']) mz += 1;
+  if(keys['a'] || keys['arrowleft']) mx -= 1;
+  if(keys['d'] || keys['arrowright']) mx += 1;
+  mx += joyVec.x; mz += joyVec.y;
+  const len = Math.hypot(mx,mz);
+  if(len > .05){
+    mx /= Math.max(1,len); mz /= Math.max(1,len);
+    const speed = 17;
+    let nx = visitor.position.x + mx * speed * dt;
+    let nz = visitor.position.z + mz * speed * dt;
+    nx = THREE.MathUtils.clamp(nx, -126, 126);
+    nz = THREE.MathUtils.clamp(nz, -92, 92);
+    for(const c of colliders){
+      if(c.box){
+        if(nx > c.x0 && nx < c.x1 && nz > c.z0 && nz < c.z1){
+          const dxl = Math.abs(nx - c.x0), dxr = Math.abs(nx - c.x1);
+          const dzl = Math.abs(nz - c.z0), dzr = Math.abs(nz - c.z1);
+          const m = Math.min(dxl, dxr, dzl, dzr);
+          if(m === dxl) nx = c.x0; else if(m === dxr) nx = c.x1;
+          else if(m === dzl) nz = c.z0; else nz = c.z1;
+        }
+      } else {
+        const dd = Math.hypot(nx - c.x, nz - c.z);
+        if(dd < c.r && dd > 0){ nx = c.x + (nx - c.x)/dd * c.r; nz = c.z + (nz - c.z)/dd * c.r; }
+      }
+    }
+    visitor.position.x = nx; visitor.position.z = nz;
+    const target = Math.atan2(mx, mz);
+    let diff = target - heading;
+    while(diff > Math.PI) diff -= Math.PI*2;
+    while(diff < -Math.PI) diff += Math.PI*2;
+    heading += diff * Math.min(1, dt*10);
+    visitor.rotation.y = heading;
+    visitor.position.y = Math.abs(Math.sin(t*9)) * .12;
+  } else {
+    visitor.position.y = 0;
+  }
+
+  const back = new THREE.Vector3(Math.sin(heading), 0, Math.cos(heading));
+  const want = visitor.position.clone().add(back.multiplyScalar(13)).add(new THREE.Vector3(0,9.5,0));
+  camPos.lerp(want, 1 - Math.pow(.0001, dt));
+  camera.position.copy(camPos);
+  camera.lookAt(visitor.position.x, 2, visitor.position.z);
+
+  updateCard();
+  renderer.render(scene, camera);
+}
+tick();
+
+addEventListener('resize', ()=>{
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+</script>
+</body>
+</html>
